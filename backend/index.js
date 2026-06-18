@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { Pool } = require('pg');
+const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
@@ -37,17 +38,28 @@ app.post('/upload', upload.single('resume'), async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
+    const dbResult = await pool.query(
       'INSERT INTO resumes (filename, content) VALUES ($1, $2) RETURNING *',
       [req.file.originalname, req.file.filename]
     );
 
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const formData = new FormData();
+    formData.append('file', new Blob([fileBuffer]), req.file.originalname);
+
+    const aiResponse = await fetch('http://ai-service:8000/process', {
+      method: 'POST',
+      body: formData,
+    });
+    const aiResult = await aiResponse.json();
+
     res.json({
-      message: 'File uploaded and saved to database!',
-      resume: result.rows[0],
+      message: 'File uploaded, saved, and sent to AI service!',
+      resume: dbResult.rows[0],
+      aiAnalysis: aiResult,
     });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to save to database', error: err.message });
+    res.status(500).json({ message: 'Process failed', error: err.message });
   }
 });
 

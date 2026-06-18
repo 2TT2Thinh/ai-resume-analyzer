@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile
 
 app = FastAPI()
 
@@ -9,3 +9,12 @@ def read_root():
 @app.get("/analyze")
 def analyze_resume():
     return {"status": "ready", "service": "resume-analyzer"}
+
+@app.post("/process")
+async def process_resume(file: UploadFile = File(...)):
+    contents = await file.read()
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "size_bytes": len(contents),
+    }
