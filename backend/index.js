@@ -31,16 +31,24 @@ app.get('/db-test', async (req, res) => {
   }
 });
 
-app.post('/upload', upload.single('resume'), (req, res) => {
+app.post('/upload', upload.single('resume'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
-  res.json({
-    message: 'File uploaded successfully!',
-    filename: req.file.originalname,
-    savedAs: req.file.filename,
-    size: req.file.size,
-  });
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO resumes (filename, content) VALUES ($1, $2) RETURNING *',
+      [req.file.originalname, req.file.filename]
+    );
+
+    res.json({
+      message: 'File uploaded and saved to database!',
+      resume: result.rows[0],
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to save to database', error: err.message });
+  }
 });
 
 app.listen(PORT, () => {
