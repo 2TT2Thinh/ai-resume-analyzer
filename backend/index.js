@@ -1,11 +1,14 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
 const { Pool } = require('pg');
 
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
+
+const upload = multer({ dest: 'uploads/' });
 
 const pool = new Pool({
   host: 'db',
@@ -26,6 +29,18 @@ app.get('/db-test', async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Database connection failed', error: err.message });
   }
+});
+
+app.post('/upload', upload.single('resume'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+  res.json({
+    message: 'File uploaded successfully!',
+    filename: req.file.originalname,
+    savedAs: req.file.filename,
+    size: req.file.size,
+  });
 });
 
 app.listen(PORT, () => {

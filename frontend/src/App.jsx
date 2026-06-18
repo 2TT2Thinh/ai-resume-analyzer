@@ -5,6 +5,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
 
   const testConnection = async () => {
     setLoading(true);
@@ -19,9 +20,28 @@ function App() {
   };
 
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    setSelectedFile(file);
-    console.log('File selected:', file);
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      alert('Vui lòng chọn file trước!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('resume', selectedFile);
+
+    try {
+      const response = await fetch('http://localhost:3000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      setUploadResult(data);
+    } catch (err) {
+      setUploadResult({ message: 'Upload failed', error: err.message });
+    }
   };
 
   return (
@@ -33,6 +53,10 @@ function App() {
       <input type="file" accept=".pdf" onChange={handleFileChange} />
       {selectedFile && (
         <p>Đã chọn: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)</p>
+      )}
+      <button onClick={handleUpload}>Upload File</button>
+      {uploadResult && (
+        <pre>{JSON.stringify(uploadResult, null, 2)}</pre>
       )}
 
       <hr />
