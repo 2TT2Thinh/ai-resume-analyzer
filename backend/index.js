@@ -1,8 +1,11 @@
 const express = require('express');
+const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
 const PORT = 3000;
+
+app.use(cors());
 
 const pool = new Pool({
   host: 'db',
@@ -19,9 +22,9 @@ app.get('/', (req, res) => {
 app.get('/db-test', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
-    res.send(`Database connected! Server time: ${result.rows[0].now}`);
+    res.json({ message: 'Database connected!', time: result.rows[0].now });
   } catch (err) {
-    res.status(500).send(`Database connection failed: ${err.message}`);
+    res.status(500).json({ message: 'Database connection failed', error: err.message });
   }
 });
 
